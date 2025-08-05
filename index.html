@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵感记录 - 捕捉每一个创意瞬间</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        * {
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .dark .glass-morphism {
+            background: rgba(31, 41, 55, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+        
+        .inspiration-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 280px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .inspiration-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .inspiration-card.editing {
+            cursor: default;
+            user-select: text;
+        }
+        
+        .inspiration-card.expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            height: auto;
+            z-index: 1001;
+            margin: 0;
+            cursor: default;
+        }
+        
+        .card-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .card-content::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to top, rgba(255,255,255,0.95), transparent);
+            pointer-events: none;
+        }
+        
+        .dark .card-content::before {
+            background: linear-gradient(to top, rgba(31,41,55,0.95), transparent);
+        }
+        
+        .inspiration-card.expanded .card-content::before,
+        .inspiration-card.editing .card-content::before {
+            display: none;
+        }
+        
+        .card-text {
+            line-height: 1.6;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+        }
+        
+        .inspiration-card.expanded .card-text,
+        .inspiration-card.editing .card-text {
+            -webkit-line-clamp: unset;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        
+        .tag-pill {
+            transition: all 0.2s ease;
+        }
+        
+        .tag-pill:hover {
+            transform: scale(1.05);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .dark .modal-content {
+            background: #1f2937;
+        }
+        
+        .danger-button {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .danger-button:hover {
+            opacity: 0.9;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+        
+        .overlay.show {
+            display: block;
+        }
+        
+        .edit-textarea {
+            resize: none;
+            outline: none;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: 1.6;
+            color: inherit;
+        }
+        
+        .edit-textarea:focus {
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .edit-tag-input {
+            min-width: 100px;
+            outline: none;
+            border: 1px dashed #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 4px 12px;
+            border-radius: 16px;
+            color: inherit;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        
+        .edit-tag-input:focus {
+            background: rgba(139, 92, 246, 0.2);
+            border-style: solid;
+        }
+        
+        .edit-mode-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 0;
+            margin: -20px -20px 16px -20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .action-button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+            font-family: inherit;
+        }
+        
+        .save-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .save-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .cancel-button {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .cancel-button:hover {
+            color: white;
+        }
+        
+        .inspiration-card.expanded {
+            border-radius: 16px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- 背景装饰 -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div class="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="relative min-h-screen">
+        <!-- 顶部导航 -->
+        <header class="glass-morphism sticky top-0 z-50 px-4 py-3">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-lightbulb text-2xl text-purple-600 dark:text-purple-400"></i>
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">灵感记录</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button type="button" onclick="toggleDarkMode()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300" id="darkModeIcon"></i>
+                    </button>
+                    <button type="button" onclick="exportData()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="导出数据">
+                        <i class="fas fa-download text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <button type="button" onclick="importData()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="导入数据">
+                        <i class="fas fa-upload text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <button type="button" onclick="showClearConfirmModal()" class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition-colors" title="清除本地数据">
+                        <i class="fas fa-trash-alt text-red-500 dark:text-red-400"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- 快速输入区 -->
+            <section class="mb-8">
+                <div class="glass-morphism rounded-2xl p-6 shadow-xl">
+                    <div class="flex flex-col space-y-4">
+                        <textarea 
+                            id="quickInput"
+                            placeholder="记录你的灵感..."
+                            class="w-full p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none transition-all"
+                            rows="3"
+                            onkeydown="handleQuickInput(event)"
+                        ></textarea>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <input 
+                                type="text" 
+                                id="tagInput"
+                                placeholder="添加标签..."
+                                class="flex-1 min-w-[200px] px-4 py-2 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                                onkeydown="handleTagInput(event)"
+                            >
+                            <div id="selectedTags" class="flex flex-wrap gap-2"></div>
+                            <button type="button" onclick="addInspiration()" class="px-6 py-2 gradient-bg text-white rounded-lg hover:opacity-90 transition-opacity flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>记录灵感</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 搜索和筛选区 -->
+            <section class="mb-6">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="搜索灵感..."
+                            class="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            oninput="filterInspirations()"
+                        >
+                    </div>
+                    <select 
+                        id="sortSelect"
+                        class="px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        onchange="sortInspirations()"
+                    >
+                        <option value="newest">最新优先</option>
+                        <option value="oldest">最早优先</option>
+                        <option value="title">按标题排序</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- 标签云 -->
+            <section class="mb-6">
+                <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">常用标签</h2>
+                <div id="tagCloud" class="flex flex-wrap gap-2"></div>
+            </section>
+
+            <!-- 灵感列表 -->
+            <section>
+                <div id="inspirationList" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+                <div id="emptyState" class="text-center py-12 hidden">
+                    <i class="fas fa-lightbulb text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                    <p class="text-gray-500 dark:text-gray-400">还没有记录任何灵感，开始记录你的第一个想法吧！</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div id="overlay" class="overlay" onclick="closeExpandedCard()"></div>
+
+    <!-- 导出选择模态框 -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">选择要导出的灵感</h3>
+                <button type="button" onclick="closeExportModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <div class="flex items-center space-x-2 mb-2">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                    <label for="selectAll" class="text-sm font-medium text-gray-700 dark:text-gray-300">全选</label>
+                </div>
+                <div id="exportList" class="max-h-96 overflow-y-auto space-y-2"></div>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeExportModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    取消
+                </button>
+                <button type="button" onclick="confirmExport()" class="px-4 py-2 gradient-bg text-white rounded-lg hover:opacity-90 transition-opacity">
+                    导出选中
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 清除确认模态框 -->
+    <div id="clearConfirmModal" class="modal">
+        <div class="modal-content">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">确认清除所有数据？</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    此操作将永久删除所有本地存储的灵感记录，且无法恢复。建议在清除前先导出重要数据。
+                </p>
+                <div class="flex justify-center space-x-3">
+                    <button type="button" onclick="closeClearConfirmModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        取消
+                    </button>
+                    <button type="button" onclick="confirmClearData()" class="px-4 py-2 danger-button text-white rounded-lg transition-opacity">
+                        确认清除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="fileInput" accept=".txt" multiple style="display: none;" onchange="handleFileImport(event)">
+
+    <script>
+        // 数据管理
+        let inspirations = JSON.parse(localStorage.getItem('inspirations') || '[]');
+        let selectedTags = [];
+        let editingId = null;
+        let selectedForExport = new Set();
+        let expandedCardId = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDarkMode();
+            renderInspirations();
+            renderTagCloud();
+        });
+
+        // 暗色模式
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+            updateDarkModeIcon();
+        }
+
+        function loadDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark');
+            }
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const icon = document.getElementById('darkModeIcon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+
+        // 快捷键支持
+        function handleQuickInput(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                addInspiration();
+            }
+        }
+
+        function handleTagInput(event) {
+            if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault();
+                addTag();
+            }
+        }
+
+        // 标签管理
+        function addTag() {
+            const input = document.getElementById('tagInput');
+            const tag = input.value.trim();
+            
+            if (tag && !selectedTags.includes(tag)) {
+                selectedTags.push(tag);
+                input.value = '';
+                renderSelectedTags();
+            }
+        }
+
+        function removeTag(tag) {
+            selectedTags = selectedTags.filter(t => t !== tag);
+            renderSelectedTags();
+        }
+
+        function renderSelectedTags() {
+            const container = document.getElementById('selectedTags');
+            container.innerHTML = selectedTags.map(tag => `
+                <span class="tag-pill px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm cursor-pointer flex items-center space-x-1">
+                    <span>${tag}</span>
+                    <i class="fas fa-times text-xs" onclick="removeTag('${tag}')"></i>
+                </span>
+            `).join('');
+        }
+
+        // 添加灵感
+        function addInspiration() {
+            const content = document.getElementById('quickInput').value.trim();
+            
+            if (!content) return;
+            
+            const inspiration = {
+                id: Date.now(),
+                content: content,
+                tags: [...selectedTags],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            inspirations.unshift(inspiration);
+            saveInspirations();
+            
+            // 清空输入
+            document.getElementById('quickInput').value = '';
+            selectedTags = [];
+            renderSelectedTags();
+            
+            renderInspirations();
+            renderTagCloud();
+            
+            // 显示成功提示
+            showNotification('灵感已记录！');
+        }
+
+        // 保存到本地存储
+        function saveInspirations() {
+            localStorage.setItem('inspirations', JSON.stringify(inspirations));
+        }
+
+        // 渲染灵感列表
+        function renderInspirations() {
+            const container = document.getElementById('inspirationList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (inspirations.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            const filtered = filterAndSortInspirations();
+            
+            container.innerHTML = filtered.map(inspiration => `
+                <div class="inspiration-card glass-morphism rounded-xl p-5 fade-in ${expandedCardId === inspiration.id ? 'expanded' : ''} ${editingId === inspiration.id ? 'editing' : ''}" id="card-${inspiration.id}">
+                    ${editingId === inspiration.id ? `
+                        <div class="edit-mode-header">
+                            <span class="text-sm font-medium">编辑模式</span>
+                            <div class="flex space-x-2">
+                                <button type="button" class="action-button cancel-button" onclick="cancelEdit(${inspiration.id})">
+                                    <i class="fas fa-times mr-1"></i>取消
+                                </button>
+                                <button type="button" class="action-button save-button" onclick="saveEdit(${inspiration.id})">
+                                    <i class="fas fa-check mr-1"></i>保存
+                                </button>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">
+                                ${formatDate(inspiration.createdAt)}
+                            </span>
+                            <div class="flex space-x-1">
+                                <button type="button" onclick="copyToClipboard(event, ${inspiration.id})" class="text-green-500 hover:text-green-700 transition-colors p-1" title="复制到剪贴板">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button type="button" onclick="enterEditMode(event, ${inspiration.id})" class="text-blue-500 hover:text-blue-700 transition-colors p-1" title="编辑">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" onclick="deleteCard(event, ${inspiration.id})" class="text-red-500 hover:text-red-700 transition-colors p-1" title="删除">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `}
+                    <div class="card-content" onclick="handleCardClick(event, ${inspiration.id})">
+                        <div class="card-text text-gray-800 dark:text-gray-200" id="text-${inspiration.id}">
+                            ${editingId === inspiration.id ? `
+                                <textarea 
+                                    class="edit-textarea"
+                                    rows="8"
+                                    id="edit-textarea-${inspiration.id}"
+                                    placeholder="输入你的灵感..."
+                                >${escapeHtml(inspiration.content)}</textarea>
+                            ` : escapeHtml(inspiration.content)}
+                        </div>
+                    </div>
+                    ${inspiration.tags.length > 0 || editingId === inspiration.id ? `
+                        <div class="mt-3 flex flex-wrap gap-1" id="tags-${inspiration.id}">
+                            ${editingId === inspiration.id ? `
+                                ${inspiration.tags.map(tag => `
+                                    <span class="px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded text-xs flex items-center space-x-1">
+                                        <span>${tag}</span>
+                                        <i class="fas fa-times text-xs cursor-pointer" onclick="removeEditTag(event, ${inspiration.id}, '${tag}')"></i>
+                                    </span>
+                                `).join('')}
+                                <input 
+                                    type="text" 
+                                    class="edit-tag-input text-xs"
+                                    placeholder="添加标签..."
+                                    onkeydown="handleEditTagInput(event, ${inspiration.id})"
+                                    id="edit-tag-input-${inspiration.id}"
+                                >
+                            ` : inspiration.tags.map(tag => `
+                                <span class="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
+                                    ${tag}
+                                </span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 复制到剪贴板功能
+        function copyToClipboard(event, id) {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            const inspiration = inspirations.find(i => i.id === id);
+            if (!inspiration) return;
+            
+            // 构建要复制的内容
+            let copyText = inspiration.content;
+            
+            // 如果有标签，也复制标签
+            if (inspiration.tags.length > 0) {
+                copyText += '\n\n标签：' + inspiration.tags.join(', ');
+            }
+            
+            // 使用现代的 Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(copyText).then(() => {
+                    showNotification('内容已复制到剪贴板');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopyTextToClipboard(copyText);
+                });
+            } else {
+                // 降级方案
+                fallbackCopyTextToClipboard(copyText);
+            }
+        }
+
+        // 降级复制方案
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showNotification('内容已复制到剪贴板');
+                } else {
+                    showNotification('复制失败，请手动复制', 'error');
+                }
+            } catch (err) {
+                console.error('复制失败:', err);
+                showNotification('复制失败，请手动复制', 'error');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        // 删除卡片功能
+        function deleteCard(event, id) {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            // 使用自定义确认对话框而不是 alert
+            const confirmDelete = confirm('确定要删除这个灵感吗？此操作不可恢复。');
+            if (confirmDelete) {
+                // 从数组中移除
+                inspirations = inspirations.filter(i => i.id !== id);
+                
+                // 保存到本地存储
+                saveInspirations();
+                
+                // 如果删除的是展开或编辑的卡片，关闭相应状态
+                if (expandedCardId === id) {
+                    closeExpandedCard();
+                }
+                if (editingId === id) {
+                    editingId = null;
+                }
+                
+                // 重新渲染界面
+                renderInspirations();
+                renderTagCloud();
+                
+                // 显示成功提示
+                showNotification('灵感已删除');
+            }
+        }
+
+        // 处理卡片点击
+        function handleCardClick(event, id) {
+            // 如果正在编辑，不处理点击事件
+            if (editingId === id) {
+                event.stopPropagation();
+                return;
+            }
+            
+            // 如果点击的是按钮区域，不展开
+            if (event.target.closest('button')) {
+                event.stopPropagation();
+                return;
+            }
+            
+            expandCard(event, id);
+        }
+
+        // 展开/收起卡片
+        function expandCard(event, id) {
+            event.stopPropagation();
+            
+            // 如果正在编辑，不展开
+            if (editingId) return;
+            
+            const card = document.getElementById(`card-${id}`);
+            const overlay = document.getElementById('overlay');
+            
+            if (expandedCardId === id) {
+                // 收起
+                card.classList.remove('expanded');
+                overlay.classList.remove('show');
+                expandedCardId = null;
+            } else {
+                // 先收起其他卡片
+                if (expandedCardId) {
+                    const prevCard = document.getElementById(`card-${expandedCardId}`);
+                    if (prevCard) {
+                        prevCard.classList.remove('expanded');
+                    }
+                }
+                
+                // 展开当前卡片
+                card.classList.add('expanded');
+                overlay.classList.add('show');
+                expandedCardId = id;
+            }
+        }
+
+        function closeExpandedCard() {
+            if (expandedCardId && !editingId) {
+                const card = document.getElementById(`card-${expandedCardId}`);
+                const overlay = document.getElementById('overlay');
+                
+                if (card) {
+                    card.classList.remove('expanded');
+                }
+                overlay.classList.remove('show');
+                expandedCardId = null;
+            }
+        }
+
+        // 进入编辑模式
+        function enterEditMode(event, id) {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            // 如果已经有卡片在编辑，先保存
+            if (editingId && editingId !== id) {
+                saveEdit(editingId);
+            }
+            
+            editingId = id;
+            
+            // 如果卡片是展开状态，保持展开
+            if (expandedCardId !== id) {
+                const cardEvent = { stopPropagation: () => {} };
+                expandCard(cardEvent, id);
+            }
+            
+            renderInspirations();
+            
+            // 聚焦到文本框
+            setTimeout(() => {
+                const textarea = document.getElementById(`edit-textarea-${id}`);
+                if (textarea) {
+                    textarea.focus();
+                    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                }
+            }, 100);
+        }
+
+        // 取消编辑
+        function cancelEdit(id) {
+            editingId = null;
+            renderInspirations();
+            
+            // 保持展开状态
+            if (expandedCardId === id) {
+                setTimeout(() => {
+                    const card = document.getElementById(`card-${id}`);
+                    const overlay = document.getElementById('overlay');
+                    if (card) card.classList.add('expanded');
+                    overlay.classList.add('show');
+                }, 100);
+            }
+        }
+
+        // 编辑功能
+        function handleEditTagInput(event, id) {
+            if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault();
+                event.stopPropagation();
+                addEditTag(id);
+            }
+        }
+
+        function addEditTag(id) {
+            const input = document.getElementById(`edit-tag-input-${id}`);
+            const tag = input.value.trim();
+            
+            if (tag) {
+                const inspiration = inspirations.find(i => i.id === id);
+                if (inspiration && !inspiration.tags.includes(tag)) {
+                    inspiration.tags.push(tag);
+                    renderEditTags(id);
+                }
+                input.value = '';
+            }
+        }
+
+        function removeEditTag(event, id, tag) {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            const inspiration = inspirations.find(i => i.id === id);
+            if (inspiration) {
+                inspiration.tags = inspiration.tags.filter(t => t !== tag);
+                renderEditTags(id);
+            }
+        }
+
+        function renderEditTags(id) {
+            const inspiration = inspirations.find(i => i.id === id);
+            if (!inspiration) return;
+            
+            const container = document.getElementById(`edit-tags-${id}`);
+            if (!container) return;
+            
+            container.innerHTML = `
+                ${inspiration.tags.map(tag => `
+                    <span class="px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded text-xs flex items-center space-x-1">
+                        <span>${tag}</span>
+                        <i class="fas fa-times text-xs cursor-pointer" onclick="removeEditTag(event, ${id}, '${tag}')"></i>
+                    </span>
+                `).join('')}
+                <input 
+                    type="text" 
+                    class="edit-tag-input text-xs"
+                    placeholder="添加标签..."
+                    onkeydown="handleEditTagInput(event, ${id})"
+                    id="edit-tag-input-${id}"
+                >
+            `;
+        }
+
+        function saveEdit(id) {
+            const textarea = document.getElementById(`edit-textarea-${id}`);
+            const inspiration = inspirations.find(i => i.id === id);
+            
+            if (textarea && inspiration) {
+                const newContent = textarea.value.trim();
+                if (newContent) {
+                    inspiration.content = newContent;
+                    inspiration.updatedAt = new Date().toISOString();
+                    saveInspirations();
+                    showNotification('已保存修改');
+                }
+            }
+            
+            // 退出编辑模式
+            editingId = null;
+            renderInspirations();
+            
+            // 保持展开状态
+            if (expandedCardId === id) {
+                setTimeout(() => {
+                    const card = document.getElementById(`card-${id}`);
+                    const overlay = document.getElementById('overlay');
+                    if (card) card.classList.add('expanded');
+                    overlay.classList.add('show');
+                }, 100);
+            }
+        }
+
+        // 搜索和筛选
+        function filterInspirations() {
+            renderInspirations();
+        }
+
+        function sortInspirations() {
+            renderInspirations();
+        }
+
+        function filterAndSortInspirations() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sortBy = document.getElementById('sortSelect').value;
+            
+            let filtered = inspirations.filter(inspiration => {
+                const matchesSearch = inspiration.content.toLowerCase().includes(searchTerm) ||
+                                    inspiration.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+                return matchesSearch;
+            });
+            
+            // 排序
+            filtered.sort((a, b) => {
+                switch (sortBy) {
+                    case 'oldest':
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    case 'title':
+                        return a.content.localeCompare(b.content);
+                    default: // newest
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+            });
+            
+            return filtered;
+        }
+
+        // 渲染标签云
+        function renderTagCloud() {
+            const container = document.getElementById('tagCloud');
+            const tagCounts = {};
+            
+            inspirations.forEach(inspiration => {
+                inspiration.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            });
+            
+            const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+            
+            if (sortedTags.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">暂无标签</p>';
+                return;
+            }
+            
+            container.innerHTML = sortedTags.map(([tag, count]) => `
+                <span class="tag-pill px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800" onclick="filterByTag('${tag}')">
+                    ${tag} (${count})
+                </span>
+            `).join('');
+        }
+
+        function filterByTag(tag) {
+            document.getElementById('searchInput').value = tag;
+            filterInspirations();
+        }
+
+        // 清除本地数据相关函数
+        function showClearConfirmModal() {
+            if (inspirations.length === 0) {
+                showNotification('没有需要清除的数据', 'info');
+                return;
+            }
+            document.getElementById('clearConfirmModal').classList.add('show');
+        }
+
+        function closeClearConfirmModal() {
+            document.getElementById('clearConfirmModal').classList.remove('show');
+        }
+
+        function confirmClearData() {
+            // 清除本地存储
+            localStorage.removeItem('inspirations');
+            
+            // 清除内存中的数据
+            inspirations = [];
+            selectedTags = [];
+            editingId = null;
+            expandedCardId = null;
+            
+            // 清空输入框
+            document.getElementById('quickInput').value = '';
+            document.getElementById('tagInput').value = '';
+            renderSelectedTags();
+            
+            // 关闭展开的卡片
+            closeExpandedCard();
+            
+            // 更新界面
+            renderInspirations();
+            renderTagCloud();
+            
+            // 关闭模态框
+            closeClearConfirmModal();
+            
+            // 显示成功提示
+            showNotification('所有本地数据已清除');
+        }
+
+        // 导出功能
+        function exportData() {
+            if (inspirations.length === 0) {
+                showNotification('没有可导出的数据', 'error');
+                return;
+            }
+            
+            selectedForExport.clear();
+            renderExportList();
+            document.getElementById('exportModal').classList.add('show');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('show');
+        }
+
+        function renderExportList() {
+            const container = document.getElementById('exportList');
+            container.innerHTML = inspirations.map(inspiration => `
+                <div class="flex items-start space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <input type="checkbox" id="export-${inspiration.id}" onchange="toggleExportSelection(${inspiration.id})" class="mt-1 w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                    <label for="export-${inspiration.id}" class="flex-1 cursor-pointer">
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200">${escapeHtml(inspiration.content.substring(0, 50))}${inspiration.content.length > 50 ? '...' : ''}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">${formatDate(inspiration.createdAt)}</p>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        function toggleExportSelection(id) {
+            if (selectedForExport.has(id)) {
+                selectedForExport.delete(id);
+            } else {
+                selectedForExport.add(id);
+            }
+            updateSelectAllCheckbox();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            if (selectAll) {
+                inspirations.forEach(inspiration => selectedForExport.add(inspiration.id));
+            } else {
+                selectedForExport.clear();
+            }
+            
+            // 更新所有复选框
+            inspirations.forEach(inspiration => {
+                const checkbox = document.getElementById(`export-${inspiration.id}`);
+                if (checkbox) checkbox.checked = selectAll;
+            });
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.checked = selectedForExport.size === inspirations.length && inspirations.length > 0;
+            selectAllCheckbox.indeterminate = selectedForExport.size > 0 && selectedForExport.size < inspirations.length;
+        }
+
+        function confirmExport() {
+            if (selectedForExport.size === 0) {
+                showNotification('请至少选择一个灵感记录', 'error');
+                return;
+            }
+            
+            const selectedInspirations = inspirations.filter(i => selectedForExport.has(i.id));
+            
+            // 为每个选中的记录创建一个单独的txt文件
+            selectedInspirations.forEach((inspiration, index) => {
+                setTimeout(() => {
+                    const content = inspiration.content;
+                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // 使用内容的前20个字符作为文件名（去除特殊字符）
+                    const safeName = inspiration.content.substring(0, 20).replace(/[\\/:*?"<>|]/g, '') || 'inspiration';
+                    const fileName = `${safeName}_${inspiration.id}.txt`;
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', url);
+                    linkElement.setAttribute('download', fileName);
+                    linkElement.click();
+                    
+                    URL.revokeObjectURL(url);
+                }, index * 100); // 延迟下载避免浏览器拦截
+            });
+            
+            closeExportModal();
+            showNotification(`已导出 ${selectedForExport.size} 个灵感记录`);
+        }
+
+        // 导入功能
+        function importData() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileImport(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            let importedCount = 0;
+            let processedFiles = 0;
+            
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result.trim();
+                        if (content) {
+                            // 创建新的灵感记录，不生成标签
+                            const inspiration = {
+                                id: Date.now() + Math.random(),
+                                content: content,
+                                tags: [], // 不生成标签
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            };
+                            
+                            inspirations.unshift(inspiration);
+                            importedCount++;
+                        }
+                    } catch (error) {
+                        console.error('导入错误:', error);
+                    }
+                    
+                    processedFiles++;
+                    
+                    // 等待所有文件处理完成
+                    if (processedFiles === files.length) {
+                        setTimeout(() => {
+                            if (importedCount > 0) {
+                                saveInspirations();
+                                renderInspirations();
+                                renderTagCloud();
+                                showNotification(`成功导入 ${importedCount} 个灵感记录`);
+                            } else {
+                                showNotification('导入失败：文件内容为空', 'error');
+                            }
+                        }, 100);
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+            
+            // 清空文件输入
+            event.target.value = '';
+        }
+
+        // 工具函数
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)} 天前`;
+            
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            
+            notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 fade-in ${bgColor} text-white`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes blob {
+                0% { transform: translate(0px, 0px) scale(1); }
+                33% { transform: translate(30px, -50px) scale(1.1); }
+                66% { transform: translate(-20px, 20px) scale(0.9); }
+                100% { transform: translate(0px, 0px) scale(1); }
+            }
+            .animate-blob {
+                animation: blob 7s infinite;
+            }
+            .animation-delay-2000 {
+                animation-delay: 2s;
+            }
+            .animation-delay-4000 {
+                animation-delay: 4s;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 全局事件监听，防止表单提交
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
+                event.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
